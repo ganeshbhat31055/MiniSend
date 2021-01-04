@@ -15,4 +15,9 @@ class Email extends Model
     {
         return $this->hasOne(EmailBody::class);
     }
+
+    public function attachments()
+    {
+        return $this->hasMany(EmailAttachments::class);
+    }
 }

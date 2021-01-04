@@ -45,9 +45,9 @@ class EmailAPITest extends TestCase
         $response->assertOk();
 
         if ($param == 'null'){
-            $emails = Email::paginate(10);
+            $emails = Email::paginate(6);
         }else{
-            $emails = Email::where($param,'like','%'.$search.'%')->paginate(10);
+            $emails = Email::where($param,'like','%'.$search.'%')->paginate(6);
         }
 
         $this->assertIsArray($response->json(),$emails);
@@ -60,11 +60,13 @@ class EmailAPITest extends TestCase
 
         $response = $this->get('/email/dashboard');
 
+        $total = Email::count();
         $success = Email::where('status',0)->count();
         $failed = Email::where('status',1)->count();
         $posted = Email::where('status',2)->count();
 
         $response->assertJson([
+            'total'=>$total,
             'success'=>$success,
             'failed'=>$failed,
             'posted'=>$posted

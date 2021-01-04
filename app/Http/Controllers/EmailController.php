@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Email;
+use App\Models\EmailAttachments;
 use App\Models\EmailBody;
+use Illuminate\Http\File;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class EmailController extends Controller
@@ -16,30 +19,18 @@ class EmailController extends Controller
      */
     public function send(Request $request): JsonResponse
     {
+        sleep(4);
         $validator = Validator::make($request->all(),[
                         'from'=>'required|email',
                         'to'=>'required|email',
                         'subject'=>'string|nullable',
                         'text'=>'required|string',
                         'html'=>'string|nullable',
-//                        'attachments'=>'max:5000'
                     ],$messages = [
                         'required' => 'The :attribute field is required.',
                         'email' =>'Email in incorrect format'
                     ]);
 
-        $files = $request->file('attachments');
-
-        if($request->hasFile('attachments'))
-        {
-            foreach ($files as $file) {
-                ($file->getClientOriginalName());
-//                $file->store('users/' . $this->user->id . '/messages');
-            }
-        }
-//        if ($request->file as $attach){
-//
-//        }
 
         if ($validator->fails()){
             return response()
@@ -61,6 +52,20 @@ class EmailController extends Controller
                     'body'=>$request->input('text'),
                     'html_body'=>$request->input('html')
                 ]);
+
+                $files = $request->file('attachments');
+
+                if($request->hasFile('attachments'))
+                {
+                    foreach ($files as $file) {
+                        EmailAttachments::create([
+                            'email_id'=>$emailId->id,
+                            'file_name'=>'attachment-'.$emailId->id.'-'.$file->getClientOriginalName(),
+                            'name'=>$file->getClientOriginalName()
+                        ]);
+                        $file->storePubliclyAs('public/attachments','attachment-'.$emailId->id.'-'.$file->getClientOriginalName());
+                    }
+                }
 
             }catch (\Exception $exception){
                 info($exception);
@@ -92,11 +97,15 @@ class EmailController extends Controller
 
     public function dashboard(): JsonResponse
     {
+        $total = Email::count();
         $success = Email::where('status',0)->count();
         $failed = Email::where('status',1)->count();
         $posted = Email::where('status',2)->count();
 
+
+
         return response()->json([
+            'total'=>$total,
             'success'=>$success,
             'failed'=>$failed,
             'posted'=>$posted
@@ -104,12 +113,22 @@ class EmailController extends Controller
     }
 
     public function show(Email $email){
+
+        $files = $email->attachments;
+
+        $attachments_data = ['length'=>$email->attachments->count()];
+        foreach($files as $file){
+            $array = ['url'=> 'http://127.0.0.1:8000'.Storage::url('attachments/'.$file->file_name),'name'=>$file->name];
+            array_push($attachments_data,$array);
+        }
+
         return response()->json([
             'to'=>$email->to,
             'from'=>$email->from,
             'subject'=>$email->subject,
-            'text'=>$email->body->body,
-            'html'=>$email->body->html_body
+            'text'=>is_null($email->body) ? null : $email->body->body,
+            'html'=>is_null($email->body) ? null :$email->body->html_body,
+            'attachments'=>$attachments_data
         ]);
     }
 
