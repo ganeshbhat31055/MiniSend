@@ -1,0 +1,3 @@
+[submodule "resources/minisend"]
+	path = resources/minisend
+	url = https://github.com/ganeshbhat31055/MiniSend-Front.git
