@@ -8,7 +8,15 @@ properly.
 ```
 git clone --recurse-submodules https://github.com/ganeshbhat31055/MiniSend.git
 ```
+```
+composer install
+```
+```
+cd resources/minisend ; npm install
+```
 The following will clone all the files required for the whole project
+
+
 
 #### Laravel Server : http://127.0.0.1:8000/ 
 #### Vue Server : http://127.0.0.1:8080/
